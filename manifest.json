@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "IG Improvements",
     "author": "CodigoDeMarras",
     "content_scripts": [
@@ -13,6 +13,9 @@
             ],
             "js": [
                 "content.js"
+            ],
+            "exclude_matches": [
+                "https://www.instagram.com/stories/*"
             ]
         }
     ],

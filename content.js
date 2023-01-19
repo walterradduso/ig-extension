@@ -11,22 +11,24 @@ function bodyTagObserver() {
     const callback = (mutationList, observer) => {
         for (const mutation of mutationList) {
             if (mutation.type === 'childList') {
-                // Select the video that will be observed for mutations
-                const videos = document.querySelectorAll('video');
-                const mutedIcons = document.querySelectorAll('[aria-label="Toggle audio"]');
+                if (!document.URL.includes('stories')) {
+                    // Select the video that will be observed for mutations
+                    const videos = document.querySelectorAll('video');
+                    const mutedIcons = document.querySelectorAll('[aria-label="Toggle audio"]');
 
-                if (videos) {
-                    for (const video of videos) {
-                        video.setAttribute("controls", true);
-                    }
-                
-                    if (mutedIcons.length) {
-                       for (const icon of mutedIcons) {
-                            icon.style.display = 'none';
+                    if (videos) {
+                        for (const video of videos) {
+                            video.setAttribute("controls", true);
                         }
+
+                        if (mutedIcons.length) {
+                        for (const icon of mutedIcons) {
+                                icon.style.display = 'none';
+                            }
+                        }
+                        
+                        break;
                     }
-                    
-                    break;
                 }
             }
         }
