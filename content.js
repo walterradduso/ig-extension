@@ -32,55 +32,59 @@ function bodyTagObserver() {
 
     if (!muteButton) return;
 
+    const tagButton = document.querySelector('svg[aria-label="Tags"]');
     const parentDiv = muteButton.parentElement;
+    const grandParentDiv = parentDiv.parentElement;
 
-    if (!parentDiv) return;
+    if (!grandParentDiv) return;
 
-    parentDiv.style.display = 'flex';
-    parentDiv.style.alignItems = 'center';
-    parentDiv.style.gap = '8px';
-    parentDiv.style.flexDirection = 'row-reverse';
-    parentDiv.style.zIndex = '9999';
-    parentDiv.style.width = '100%';
+    grandParentDiv.style.alignItems = 'center';
+    grandParentDiv.style.display = 'flex';
+    grandParentDiv.style.flexDirection = 'row-reverse';
+    grandParentDiv.style.gap = '8px';
+    grandParentDiv.style.justifyContent = !!tagButton ? 'center' : 'start';
+    grandParentDiv.style.width = '100%';
+    grandParentDiv.style.zIndex = '9999';
 
-    parentDiv.style.opacity = '0';
-    parentDiv.style.pointerEvents = 'none';
-    parentDiv.style.transition = 'opacity 0.2s ease-in-out';
+    grandParentDiv.style.opacity = '0';
+    grandParentDiv.style.pointerEvents = 'none';
+    grandParentDiv.style.transition = 'opacity 0.2s ease-in-out';
 
     let hideTimeout = null;
 
     // Mostrar los controles al hacer hover en el video (sin delay)
     video.addEventListener('mouseenter', () => {
       clearTimeout(hideTimeout);
-      parentDiv.style.opacity = '1';
-      parentDiv.style.pointerEvents = 'auto';
+      grandParentDiv.style.opacity = '1';
+      grandParentDiv.style.pointerEvents = 'auto';
     });
 
     // Mantener los controles visibles cuando el mouse está sobre ellos
-    parentDiv.addEventListener('mouseenter', () => {
+    grandParentDiv.addEventListener('mouseenter', () => {
       clearTimeout(hideTimeout);
-      parentDiv.style.opacity = '1';
-      parentDiv.style.pointerEvents = 'auto';
+      grandParentDiv.style.opacity = '1';
+      grandParentDiv.style.pointerEvents = 'auto';
     });
 
     // Ocultar los controles con delay cuando el mouse sale del video o los controles
     const hideControls = () => {
       hideTimeout = setTimeout(() => {
-        parentDiv.style.opacity = '0';
-        parentDiv.style.pointerEvents = 'none';
+        grandParentDiv.style.opacity = '0';
+        grandParentDiv.style.pointerEvents = 'none';
       }, 2000); // 2 segundos de delay
     };
 
     video.addEventListener('mouseleave', hideControls);
-    parentDiv.addEventListener('mouseleave', hideControls);
+    grandParentDiv.addEventListener('mouseleave', hideControls);
 
     const controlsContainer = document.createElement('div');
-    controlsContainer.style.display = 'flex';
     controlsContainer.style.alignItems = 'center';
+    controlsContainer.style.display = 'flex';
     controlsContainer.style.gap = '8px';
-    controlsContainer.style.marginLeft = '10px';
-    controlsContainer.style.width = '100%';
-    controlsContainer.style.marginBottom = '16px';
+    controlsContainer.style.marginLeft = !!tagButton ? '0px' : '12px';
+    controlsContainer.style.position = 'absolute';
+    controlsContainer.style.bottom = '12px';
+    controlsContainer.style.width = !!tagButton ? 'calc(100% - 104px)' : 'calc(100% - 64px)';
 
     const playPauseButton = document.createElement('button');
     playPauseButton.style = muteButton.style;
@@ -136,7 +140,7 @@ function bodyTagObserver() {
     progressContainer.appendChild(progressBar);
     progressContainer.appendChild(totalTimeDisplay);
 
-    // Actualizar la barra de progreso y los tiempos dinámicamente
+    // Actualizar la barra de progreso y los tiempos de forma dinámica
     video.addEventListener('timeupdate', () => {
       progressBar.value = (video.currentTime / video.duration) * 100;
       currentTimeDisplay.textContent = formatTime(video.currentTime);
@@ -177,7 +181,7 @@ function bodyTagObserver() {
     controlsContainer.appendChild(playPauseButton);
     controlsContainer.appendChild(progressContainer);
     controlsContainer.appendChild(fullScreenButton);
-    parentDiv.appendChild(controlsContainer);
+    grandParentDiv.appendChild(controlsContainer);
   }
 
   function formatTime(seconds) {
@@ -193,7 +197,7 @@ function bodyTagObserver() {
     button.style.cursor = 'pointer';
     button.style.color = 'white';
     button.style.padding = '7px 8px 3px';
-    button.style.backgroundColor = '#262626';
+    button.style.backgroundColor = 'rgba(43, 48, 54, .8)';
     button.style.borderRadius = '50%';
   }
 
