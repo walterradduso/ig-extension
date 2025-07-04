@@ -22,13 +22,10 @@ function bodyTagObserver() {
 
   function configureVideo(video) {
     if (video.dataset.processed) return;
+
     video.dataset.processed = 'true';
 
-    let muteButton = video.closest('article')?.querySelector('[aria-label="Toggle audio"]');
-
-    if (!muteButton && location.pathname.includes('/reel/')) {
-      muteButton = video.parentElement?.querySelector('button svg[aria-label="Audio is muted"]')?.closest('button');
-    }
+    const muteButton = video.parentElement?.querySelector('button svg[aria-label="Audio is muted"]')?.closest('button');
 
     if (!muteButton) return;
 
