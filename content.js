@@ -23,11 +23,13 @@ function bodyTagObserver() {
   function configureVideo(video) {
     if (video.dataset.processed) return;
 
-    video.dataset.processed = 'true';
-
-    const muteButton = video.parentElement?.querySelector('button svg[aria-label="Audio is muted"]')?.closest('button');
+    const muteButton = video.parentElement
+      ?.querySelector('button svg[aria-label="Audio is muted"], button svg[aria-label="Audio is playing"]')
+      ?.closest('button');
 
     if (!muteButton) return;
+
+    video.dataset.processed = 'true';
 
     const tagButton = document.querySelector('svg[aria-label="Tags"]');
     const parentDiv = muteButton.parentElement;
@@ -218,6 +220,10 @@ function bodyTagObserver() {
   bodyObserver.observe(targetNode, config);
 
   document.querySelectorAll('video').forEach(configureVideo);
+
+  setInterval(() => {
+    document.querySelectorAll('video:not([data-processed="true"])').forEach(configureVideo);
+  }, 2000);
 }
 
 window.onload = bodyTagObserver;
