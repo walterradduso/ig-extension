@@ -1,14 +1,16 @@
 {
   "manifest_version": 3,
-  "version": "1.0.7",
+  "version": "2.0.0",
   "name": "IG Improvements",
+  "description": "Adds custom playback controls to Instagram videos",
   "author": "WalterRadduso",
   "content_scripts": [
     {
       "matches": ["https://www.instagram.com/*"],
       "css": ["styles.css"],
       "js": ["content.js"],
-      "exclude_matches": ["https://www.instagram.com/stories/*"]
+      "exclude_matches": ["https://www.instagram.com/stories/*"],
+      "run_at": "document_idle"
     }
   ],
   "icons": {
@@ -16,5 +18,8 @@
     "32": "assets/icons/32.png",
     "48": "assets/icons/48.png",
     "128": "assets/icons/128.png"
-  }
+  },
+  "permissions": [],
+  "host_permissions": [],
+  "web_accessible_resources": []
 }

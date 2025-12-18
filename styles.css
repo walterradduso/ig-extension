@@ -1,4 +1,185 @@
+/**
+ * IG Improvements - Custom Styles
+ * @version 2.0.0
+ */
+
+/* Video container */
 video {
-    position: relative;
-    z-index: 999;
+  position: relative;
+  z-index: 999;
+}
+
+/* Custom controls container */
+.ig-improvements-controls {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Styles for input range (progress bar) */
+.ig-improvements-controls input[type='range'] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+/* Thumb styles - WebKit (Chrome, Safari, Edge) */
+.ig-improvements-controls input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.ig-improvements-controls input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Thumb styles - Firefox */
+.ig-improvements-controls input[type='range']::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s ease;
+}
+
+.ig-improvements-controls input[type='range']::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Thumb styles - IE/Edge (legacy) */
+.ig-improvements-controls input[type='range']::-ms-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: none;
+}
+
+/* Track styles - Firefox */
+.ig-improvements-controls input[type='range']::-moz-range-track {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  height: 5px;
+}
+
+/* Track styles - IE/Edge (legacy) */
+.ig-improvements-controls input[type='range']::-ms-track {
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+  height: 5px;
+}
+
+.ig-improvements-controls input[type='range']::-ms-fill-lower {
+  background: white;
+  border-radius: 4px;
+}
+
+.ig-improvements-controls input[type='range']::-ms-fill-upper {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+/* Custom buttons */
+.ig-improvements-controls button {
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.ig-improvements-controls button:active {
+  transform: scale(0.95);
+}
+
+/* Prevent text selection in controls */
+.ig-improvements-controls * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ig-improvements-controls {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Accessibility improvements */
+.ig-improvements-controls button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.ig-improvements-controls input[type='range']:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* Dark mode support (if Instagram implements it) */
+@media (prefers-color-scheme: dark) {
+  .ig-improvements-controls button {
+    background-color: rgba(43, 48, 54, 0.9);
+  }
+}
+
+/* Responsive - small screens */
+@media (max-width: 768px) {
+  .ig-improvements-controls button {
+    padding: 5px 6px 2px;
+  }
+
+  .ig-improvements-controls button svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Prevent conflicts with Instagram styles */
+.ig-improvements-controls * {
+  box-sizing: border-box;
+}
+
+/* Performance improvements */
+.ig-improvements-controls {
+  will-change: opacity;
+  contain: layout style paint;
+}
+
+/* Speed menu specific styles */
+.ig-speed-menu {
+  pointer-events: auto !important;
+}
+
+.ig-speed-menu > div {
+  white-space: nowrap;
+}
+
+.ig-speed-menu > div:first-child {
+  border-radius: 8px 8px 0 0;
+}
+
+.ig-speed-menu > div:last-child {
+  border-radius: 0 0 8px 8px;
 }

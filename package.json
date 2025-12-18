@@ -1,0 +1,35 @@
+{
+  "name": "ig-improvements",
+  "version": "2.0.0",
+  "description": "Browser extension that adds custom controls to Instagram videos",
+  "author": "WalterRadduso",
+  "license": "MIT",
+  "homepage": "https://github.com/walterradduso/ig-improvements",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/walterradduso/ig-improvements.git"
+  },
+  "bugs": {
+    "url": "https://github.com/walterradduso/ig-improvements/issues"
+  },
+  "keywords": [
+    "instagram",
+    "video",
+    "controls",
+    "chrome-extension",
+    "browser-extension",
+    "firefox-addon"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "package:chrome": "node scripts/package-chrome.js",
+    "package:firefox": "node scripts/package-firefox.js",
+    "lint": "echo 'Lint configuration pending'",
+    "test": "echo 'Test configuration pending'"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+
