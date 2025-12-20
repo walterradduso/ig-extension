@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2024-12-19
+
+### Changed
+- **Excluded Reels pages**: Extension no longer loads on `/reels/*` URLs to avoid conflicts with Instagram's native Reels interface
+- Added `exclude_matches` for Reels in manifest to prevent the extension from interfering with Reels functionality
+
+### Notes
+- The extension now works exclusively on Feed videos and Post videos (`/p/*`)
+- Reels support may be added in a future version with proper implementation
+- This change ensures the extension does not interfere with Instagram's native Reels experience
+
+---
+
 ## [2.0.0] - 2024-12-18
 
 ### 🎉 Major Changes

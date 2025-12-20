@@ -1,8 +1,8 @@
 /**
  * IG Improvements - Extension to add video controls to Instagram
- * @version 2.0.0
+ * @version 2.0.1
  * @author WalterRadduso
- * @description Adds custom playback controls to Instagram videos
+ * @description Adds custom playback controls to Instagram videos (Posts and Feed only)
  */
 
 // ============================================================================

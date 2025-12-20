@@ -14,6 +14,13 @@ Browser extension that adds custom playback controls to Instagram videos.
 - ✅ Optimized for performance and memory
 - ✅ Respects Instagram's native controls (mute/unmute, tags)
 
+## 📍 Where It Works
+
+- ✅ **Feed videos**: Full video controls on your main feed
+- ✅ **Post videos** (`/p/*`): Complete playback controls on individual posts
+- ❌ **Reels** (`/reels/*`): Not supported (extension does not load to avoid conflicts)
+- ❌ **Stories** (`/stories/*`): Not supported
+
 ## 📦 Installation
 
 ### Chrome / Edge / Brave / Opera
@@ -64,10 +71,10 @@ Edit constants in `content.js`:
 
 ```javascript
 const CONFIG = {
-  CONTROLS_HIDE_DELAY: 2000,      // ms to hide controls
-  DEBOUNCE_DELAY: 300,            // ms for mutation debouncing
-  FALLBACK_CHECK_INTERVAL: 3000,  // ms for fallback check
-  MAX_RETRIES: 3,                 // max retry attempts per video
+  CONTROLS_HIDE_DELAY: 2000, // ms to hide controls
+  DEBOUNCE_DELAY: 300, // ms for mutation debouncing
+  FALLBACK_CHECK_INTERVAL: 3000, // ms for fallback check
+  MAX_RETRIES: 3, // max retry attempts per video
 };
 ```
 
@@ -121,19 +128,19 @@ Modify `CONTROLS_HIDE_DELAY` in the configuration (value in milliseconds).
 
 ### v1.0.7 → v2.0.0
 
-| Aspect | v1.0.7 | v2.0.0 |
-|---------|--------|--------|
-| Architecture | Functional | Class-oriented |
-| Video tracking | `dataset` | `WeakMap` |
-| Memory leaks | ❌ Yes | ✅ No |
-| Debouncing | ❌ No | ✅ Yes |
-| Retry logic | ❌ No | ✅ Yes (3 attempts) |
-| Resource cleanup | ❌ Manual | ✅ Automatic |
-| Fullscreen | ⚠️ Chrome only | ✅ Cross-browser |
-| SPA routing | ⚠️ Partial | ✅ Complete |
-| Error handling | ❌ Minimal | ✅ Complete |
-| Debug mode | ❌ No | ✅ Yes |
-| Documentation | ⚠️ Comments | ✅ Complete |
+| Aspect           | v1.0.7         | v2.0.0              |
+| ---------------- | -------------- | ------------------- |
+| Architecture     | Functional     | Class-oriented      |
+| Video tracking   | `dataset`      | `WeakMap`           |
+| Memory leaks     | ❌ Yes         | ✅ No               |
+| Debouncing       | ❌ No          | ✅ Yes              |
+| Retry logic      | ❌ No          | ✅ Yes (3 attempts) |
+| Resource cleanup | ❌ Manual      | ✅ Automatic        |
+| Fullscreen       | ⚠️ Chrome only | ✅ Cross-browser    |
+| SPA routing      | ⚠️ Partial     | ✅ Complete         |
+| Error handling   | ❌ Minimal     | ✅ Complete         |
+| Debug mode       | ❌ No          | ✅ Yes              |
+| Documentation    | ⚠️ Comments    | ✅ Complete         |
 
 ## 🤝 Contributing
 
@@ -148,6 +155,7 @@ Contributions are welcome:
 ## 📝 Changelog
 
 ### v2.0.0 (2024)
+
 - ✨ Complete refactoring with class-oriented architecture
 - ⚡ Significant performance improvements (debouncing, WeakMap)
 - 🔧 Improved cross-browser compatibility
@@ -158,6 +166,7 @@ Contributions are welcome:
 - 📚 Complete documentation
 
 ### v1.0.7
+
 - Initial version with basic controls
 
 ## 📄 License
@@ -167,6 +176,7 @@ This project is under the MIT license. See `LICENSE` file for more details.
 ## 👤 Author
 
 **Walter Radduso**
+
 - GitHub: [@walterradduso](https://github.com/walterradduso)
 
 ## 🙏 Acknowledgments
