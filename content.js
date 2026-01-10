@@ -1,6 +1,6 @@
 /**
  * IG Improvements - Extension to add video controls to Instagram
- * @version 2.0.1
+ * @version 2.0.2
  * @author WalterRadduso
  * @description Adds custom playback controls to Instagram videos (Posts and Feed only)
  */
@@ -12,8 +12,11 @@
 const CONFIG = {
   CONTROLS_HIDE_DELAY: 2000, // ms to hide controls
   DEBOUNCE_DELAY: 300, // ms for mutation debouncing
-  FALLBACK_CHECK_INTERVAL: 3000, // ms for fallback check
-  MAX_RETRIES: 3, // max attempts to configure a video
+  FALLBACK_CHECK_INTERVAL: 2000, // ms for fallback check (reduced for faster detection)
+  MAX_RETRIES: 8, // max attempts to configure a video (increased for Windows)
+  INITIAL_RETRY_DELAY: 500, // ms for first retry
+  MAX_RETRY_DELAY: 2000, // ms for max retry delay (exponential backoff)
+  ELEMENT_WAIT_TIMEOUT: 10000, // ms to wait for elements to appear
 };
 
 const SELECTORS = {
@@ -54,16 +57,46 @@ class VideoControlsManager {
     try {
       this.log('Initializing IG Improvements...');
 
-      // Wait for DOM to be ready
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => this.start());
-      } else {
-        this.start();
-      }
+      // Wait for DOM to be ready with multiple checks for Windows compatibility
+      const initializeWhenReady = () => {
+        // Check if document and body are ready
+        if (document.readyState === 'loading' || !document.body) {
+          // Wait for DOMContentLoaded or body to appear
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+              // Additional wait for body (important for Windows)
+              this.waitForBody(() => this.start());
+            });
+          } else {
+            // Body not ready yet, wait a bit
+            setTimeout(() => this.waitForBody(() => this.start()), 100);
+          }
+        } else {
+          // DOM seems ready, but wait a bit more for Windows
+          this.waitForBody(() => this.start());
+        }
+      };
 
+      initializeWhenReady();
       this.isInitialized = true;
     } catch (error) {
       this.logError('Error during initialization', error);
+    }
+  }
+
+  /**
+   * Waits for body to be available (important for Windows)
+   */
+  waitForBody(callback, maxAttempts = 20) {
+    if (document.body) {
+      // Body is ready, execute callback with a small delay
+      setTimeout(callback, 100);
+    } else if (maxAttempts > 0) {
+      setTimeout(() => this.waitForBody(callback, maxAttempts - 1), 100);
+    } else {
+      // Give up and try anyway
+      this.logError('Body not found after max attempts, proceeding anyway', null);
+      setTimeout(callback, 200);
     }
   }
 
@@ -72,11 +105,19 @@ class VideoControlsManager {
    */
   start() {
     try {
-      this.setupMutationObserver();
-      this.processExistingVideos();
-      this.setupFallbackCheck();
-      this.setupNavigationListener();
-      this.log('System started successfully');
+      // Wait a bit more for Windows to ensure DOM is ready
+      setTimeout(() => {
+        this.setupMutationObserver();
+
+        // Process existing videos with multiple attempts
+        this.processExistingVideos();
+        setTimeout(() => this.processExistingVideos(), 500);
+        setTimeout(() => this.processExistingVideos(), 1500);
+
+        this.setupFallbackCheck();
+        this.setupNavigationListener();
+        this.log('System started successfully');
+      }, 200);
     } catch (error) {
       this.logError('Error starting system', error);
     }
@@ -95,6 +136,7 @@ class VideoControlsManager {
     const config = {
       childList: true,
       subtree: true,
+      attributes: false, // Don't watch attributes to reduce overhead
     };
 
     this.observer = new MutationObserver((mutations) => {
@@ -114,16 +156,24 @@ class VideoControlsManager {
    */
   handleMutations(mutations) {
     try {
-      // Check if there are new videos added
+      // Check if there are new videos added or if structure changed
       const hasVideoChanges = mutations.some((mutation) => {
         return Array.from(mutation.addedNodes).some((node) => {
           if (node.nodeType !== Node.ELEMENT_NODE) return false;
-          return node.tagName === 'VIDEO' || node.querySelector?.(SELECTORS.VIDEO);
+          // Check for video elements or containers that might contain videos
+          return (
+            node.tagName === 'VIDEO' ||
+            node.querySelector?.(SELECTORS.VIDEO) ||
+            node.querySelector?.(SELECTORS.MUTE_BUTTON) // Also trigger on mute button appearance
+          );
         });
       });
 
       if (hasVideoChanges) {
-        this.processExistingVideos();
+        // Small delay to ensure DOM is fully updated
+        setTimeout(() => {
+          this.processExistingVideos();
+        }, 150);
       }
     } catch (error) {
       this.logError('Error in handleMutations', error);
@@ -135,8 +185,25 @@ class VideoControlsManager {
    */
   processExistingVideos() {
     try {
-      const videos = document.querySelectorAll(SELECTORS.VIDEO);
-      videos.forEach((video) => this.configureVideo(video));
+      // Wait a bit for DOM to stabilize (especially important for Windows)
+      setTimeout(() => {
+        try {
+          const videos = document.querySelectorAll(SELECTORS.VIDEO);
+          const videoArray = Array.from(videos);
+
+          if (videoArray.length === 0) return;
+
+          // Process each video
+          videoArray.forEach((video) => {
+            // Only process if video is in DOM and not already processed
+            if (document.contains(video) && !this.processedVideos.has(video)) {
+              this.configureVideo(video);
+            }
+          });
+        } catch (error) {
+          this.logError('Error in processExistingVideos delayed', error);
+        }
+      }, 100); // Small delay to ensure DOM is stable
     } catch (error) {
       this.logError('Error in processExistingVideos', error);
     }
@@ -147,21 +214,74 @@ class VideoControlsManager {
    */
   configureVideo(video) {
     try {
+      // Validate video element is still in DOM
+      if (!document.contains(video)) {
+        return;
+      }
+
       // Check if already processed
       if (this.processedVideos.has(video)) return;
 
-      // Get retry count
-      const retryCount = video.dataset.igRetries ? parseInt(video.dataset.igRetries) : 0;
+      // Check if video is ready
+      if (!this.isVideoReady(video)) {
+        // Wait for video to be ready
+        const retryCount = video.dataset.igRetries ? parseInt(video.dataset.igRetries) : 0;
+        if (retryCount < CONFIG.MAX_RETRIES) {
+          video.dataset.igRetries = (retryCount + 1).toString();
+          const delay = Math.min(
+            CONFIG.INITIAL_RETRY_DELAY * Math.pow(1.5, retryCount),
+            CONFIG.MAX_RETRY_DELAY
+          );
+          setTimeout(() => this.configureVideo(video), delay);
+        }
+        return;
+      }
 
       // Find mute button (needed to know where to insert controls)
       const muteButton = this.findMuteButton(video);
 
       if (!muteButton) {
-        // Retry if button wasn't found
+        // Retry if button wasn't found with exponential backoff
+        const retryCount = video.dataset.igRetries ? parseInt(video.dataset.igRetries) : 0;
         if (retryCount < CONFIG.MAX_RETRIES) {
           video.dataset.igRetries = (retryCount + 1).toString();
-          setTimeout(() => this.configureVideo(video), 500);
+          const delay = Math.min(
+            CONFIG.INITIAL_RETRY_DELAY * Math.pow(1.5, retryCount),
+            CONFIG.MAX_RETRY_DELAY
+          );
+          setTimeout(() => this.configureVideo(video), delay);
+        } else {
+          // Try alternative method to find container
+          this.tryAlternativeContainerSetup(video);
         }
+        return;
+      }
+
+      // Validate mute button is still in DOM
+      if (!document.contains(muteButton)) {
+        return;
+      }
+
+      // Validate parent elements exist
+      const parentDiv = muteButton.parentElement;
+      const grandParentDiv = parentDiv?.parentElement;
+
+      if (!parentDiv || !grandParentDiv) {
+        const retryCount = video.dataset.igRetries ? parseInt(video.dataset.igRetries) : 0;
+        if (retryCount < CONFIG.MAX_RETRIES) {
+          video.dataset.igRetries = (retryCount + 1).toString();
+          const delay = Math.min(
+            CONFIG.INITIAL_RETRY_DELAY * Math.pow(1.5, retryCount),
+            CONFIG.MAX_RETRY_DELAY
+          );
+          setTimeout(() => this.configureVideo(video), delay);
+        }
+        return;
+      }
+
+      // Check if controls already exist
+      if (grandParentDiv.querySelector('.ig-improvements-controls')) {
+        this.processedVideos.set(video, true);
         return;
       }
 
@@ -177,19 +297,142 @@ class VideoControlsManager {
       this.log('Video configured successfully');
     } catch (error) {
       this.logError('Error in configureVideo', error);
+      // Don't mark as processed on error, allow retry
+      this.processedVideos.delete(video);
     }
   }
 
   /**
-   * Finds Instagram's mute button
+   * Finds Instagram's mute button with multiple strategies
    */
   findMuteButton(video) {
     try {
-      const button = video.parentElement?.querySelector(SELECTORS.MUTE_BUTTON)?.closest('button');
-      return button;
+      // Strategy 1: Search in immediate parent
+      let button = video.parentElement?.querySelector(SELECTORS.MUTE_BUTTON)?.closest('button');
+      if (button && document.contains(button)) return button;
+
+      // Strategy 2: Search in article container
+      const article = video.closest('article');
+      if (article) {
+        button = article.querySelector(SELECTORS.MUTE_BUTTON)?.closest('button');
+        if (button && document.contains(button)) return button;
+      }
+
+      // Strategy 3: Search in broader parent hierarchy
+      let current = video.parentElement;
+      let depth = 0;
+      while (current && depth < 5) {
+        button = current.querySelector(SELECTORS.MUTE_BUTTON)?.closest('button');
+        if (button && document.contains(button)) return button;
+        current = current.parentElement;
+        depth++;
+      }
+
+      // Strategy 4: Search by aria-label directly
+      const buttons = Array.from(document.querySelectorAll('button')).filter((btn) => {
+        const svg = btn.querySelector(
+          'svg[aria-label="Audio is muted"], svg[aria-label="Audio is playing"]'
+        );
+        return svg && this.isElementNearVideo(btn, video);
+      });
+
+      if (buttons.length > 0) {
+        return buttons[0];
+      }
+
+      return null;
     } catch (error) {
       this.logError('Error finding mute button', error);
       return null;
+    }
+  }
+
+  /**
+   * Checks if an element is near a video (same container context)
+   */
+  isElementNearVideo(element, video) {
+    try {
+      const videoContainer =
+        video.closest('article') || video.parentElement?.parentElement?.parentElement;
+      const elementContainer =
+        element.closest('article') || element.parentElement?.parentElement?.parentElement;
+      return videoContainer && elementContainer && videoContainer === elementContainer;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Checks if video element is ready for configuration
+   */
+  isVideoReady(video) {
+    try {
+      // Video must be in DOM
+      if (!document.contains(video)) return false;
+
+      // Video should have some dimensions (loaded)
+      if (video.offsetWidth === 0 && video.offsetHeight === 0) {
+        // Give it a moment, might be loading
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Alternative method to setup controls when mute button can't be found
+   */
+  tryAlternativeContainerSetup(video) {
+    try {
+      // Try to find container by looking for common Instagram structures
+      const article = video.closest('article');
+      if (!article) return;
+
+      // Look for any button container near the video
+      const videoContainer = video.parentElement?.parentElement?.parentElement;
+      if (!videoContainer) return;
+
+      // Check if controls already exist
+      if (videoContainer.querySelector('.ig-improvements-controls')) {
+        this.processedVideos.set(video, true);
+        return;
+      }
+
+      // Try to create controls with a dummy mute button reference
+      // We'll position relative to video instead
+      const tagButton = this.findTagButton(video);
+      const controlsContainer = this.createControlsContainer(tagButton);
+
+      // Adjust positioning if no mute button found
+      if (!tagButton) {
+        controlsContainer.style.left = '12px';
+        controlsContainer.style.right = 'auto';
+      }
+
+      const playPauseButton = this.createPlayPauseButton(video);
+      const progressContainer = this.createProgressBar(video);
+      const speedButton = this.createSpeedButton(video);
+      const fullScreenButton = this.createFullscreenButton(video);
+
+      controlsContainer.appendChild(playPauseButton);
+      controlsContainer.appendChild(progressContainer);
+      controlsContainer.appendChild(speedButton);
+      controlsContainer.appendChild(fullScreenButton);
+
+      // Try to append to video container or article
+      const targetContainer = videoContainer || article;
+      if (targetContainer) {
+        targetContainer.appendChild(controlsContainer);
+        this.setupControlsVisibility(video, targetContainer);
+        this.setupCleanup(video, targetContainer);
+        this.processedVideos.set(video, true);
+        this.log('Video configured with alternative method');
+      }
+    } catch (error) {
+      this.logError('Error in alternative container setup', error);
     }
   }
 
@@ -212,10 +455,30 @@ class VideoControlsManager {
    */
   createControls(video, muteButton) {
     try {
+      // Validate inputs
+      if (!video || !document.contains(video)) {
+        this.logError('Video element invalid or not in DOM', null);
+        return;
+      }
+
+      if (!muteButton || !document.contains(muteButton)) {
+        this.logError('Mute button invalid or not in DOM', null);
+        return;
+      }
+
       const parentDiv = muteButton.parentElement;
       const grandParentDiv = parentDiv?.parentElement;
 
-      if (!grandParentDiv) return;
+      if (!grandParentDiv || !document.contains(grandParentDiv)) {
+        this.logError('Parent containers not found or not in DOM', null);
+        return;
+      }
+
+      // Check if controls already exist
+      if (grandParentDiv.querySelector('.ig-improvements-controls')) {
+        this.log('Controls already exist, skipping');
+        return;
+      }
 
       const tagButton = this.findTagButton(video);
 
@@ -229,20 +492,42 @@ class VideoControlsManager {
       const speedButton = this.createSpeedButton(video);
       const fullScreenButton = this.createFullscreenButton(video);
 
+      // Validate all controls were created
+      if (
+        !controlsContainer ||
+        !playPauseButton ||
+        !progressContainer ||
+        !speedButton ||
+        !fullScreenButton
+      ) {
+        this.logError('Failed to create one or more controls', null);
+        return;
+      }
+
       // Assemble
       controlsContainer.appendChild(playPauseButton);
       controlsContainer.appendChild(progressContainer);
       controlsContainer.appendChild(speedButton);
       controlsContainer.appendChild(fullScreenButton);
-      grandParentDiv.appendChild(controlsContainer);
 
-      // Set up controls visibility
-      this.setupControlsVisibility(video, grandParentDiv);
+      // Ensure grandParentDiv is still in DOM before appending
+      if (document.contains(grandParentDiv)) {
+        grandParentDiv.appendChild(controlsContainer);
 
-      // Save cleanup handler
-      this.setupCleanup(video, grandParentDiv);
+        // Set up controls visibility
+        this.setupControlsVisibility(video, grandParentDiv);
+
+        // Save cleanup handler
+        this.setupCleanup(video, grandParentDiv);
+
+        this.log('Controls created and attached successfully');
+      } else {
+        this.logError('Container removed from DOM during control creation', null);
+      }
     } catch (error) {
       this.logError('Error in createControls', error);
+      // Don't mark as processed on error, allow retry
+      this.processedVideos.delete(video);
     }
   }
 
@@ -718,7 +1003,20 @@ class VideoControlsManager {
 
     // Periodically check for unprocessed videos
     this.fallbackInterval = setInterval(() => {
-      this.processExistingVideos();
+      try {
+        // Check if there are unprocessed videos
+        const videos = document.querySelectorAll(SELECTORS.VIDEO);
+        const unprocessedVideos = Array.from(videos).filter(
+          (video) => document.contains(video) && !this.processedVideos.has(video)
+        );
+
+        if (unprocessedVideos.length > 0) {
+          this.log(`Found ${unprocessedVideos.length} unprocessed videos, processing...`);
+          unprocessedVideos.forEach((video) => this.configureVideo(video));
+        }
+      } catch (error) {
+        this.logError('Error in fallback check', error);
+      }
     }, CONFIG.FALLBACK_CHECK_INTERVAL);
   }
 

@@ -5,13 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2024-12-20
+
+### Fixed
+
+- **Windows compatibility**: Fixed issue where controls were not loading on Windows systems
+- **DOM timing issues**: Improved handling of DOM loading delays, especially on Windows
+- **Element detection**: Enhanced mute button detection with multiple fallback strategies
+
+### Changed
+
+- **Retry logic**: Increased max retries from 3 to 8 attempts per video
+- **Retry timing**: Implemented exponential backoff (500ms → 2000ms) for better Windows compatibility
+- **Fallback check**: Reduced interval from 3s to 2s for faster detection of unprocessed videos
+- **Initialization**: Added multiple processing attempts at startup (immediate, 500ms, 1500ms)
+- **Element search**: Implemented 4 different strategies to find mute button (parent, article, hierarchy, aria-label)
+
+### Added
+
+- **Alternative container setup**: Fallback method to create controls when mute button cannot be found
+- **Video readiness check**: Validates video has dimensions before processing
+- **DOM validation**: Comprehensive checks to ensure elements are in DOM before manipulation
+- **Body wait mechanism**: Waits for document.body to be available (important for Windows)
+- **Enhanced error handling**: Errors no longer mark videos as processed, allowing retries
+- **Multiple mutation detection**: MutationObserver now also detects mute button appearance
+
+### Improved
+
+- **Windows compatibility**: Significantly improved reliability on Windows systems with Chrome/Brave
+- **Robustness**: Better handling of edge cases and timing issues
+- **Performance**: More efficient detection and processing of videos
+- **Stability**: Enhanced error recovery and retry mechanisms
+
+### Technical Details
+
+- Added `waitForBody()` method to ensure DOM is ready before initialization
+- Implemented `isVideoReady()` to validate video elements before processing
+- Added `isElementNearVideo()` helper to verify element context
+- Enhanced `findMuteButton()` with 4 search strategies
+- Improved `processExistingVideos()` with DOM stability delay
+- Better validation in `createControls()` before attaching elements
+
+---
+
 ## [2.0.1] - 2024-12-19
 
 ### Changed
+
 - **Excluded Reels pages**: Extension no longer loads on `/reels/*` URLs to avoid conflicts with Instagram's native Reels interface
 - Added `exclude_matches` for Reels in manifest to prevent the extension from interfering with Reels functionality
 
 ### Notes
+
 - The extension now works exclusively on Feed videos and Post videos (`/p/*`)
 - Reels support may be added in a future version with proper implementation
 - This change ensures the extension does not interfere with Instagram's native Reels experience
